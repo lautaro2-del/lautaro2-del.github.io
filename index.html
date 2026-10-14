@@ -7,9 +7,7 @@
 <!-- Monetag: si te piden verificar el sitio con una etiqueta meta, pégala aquí debajo (p. ej. <meta name="monetag" content="...">) -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <!-- Monetag (Telegram Mini App): etiqueta tal como la entrega el panel -->
-<script>(function(s){s.dataset.zone='12016271',s.src='https://n6wxm.com'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-
-  
+<script src='//libtl.com/sdk.js' data-zone='11999149' data-sdk='show_11999149'></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
@@ -582,7 +580,7 @@ const Ads = {
       const fn = this.mtFn(); if(typeof fn !== 'function') return res('unavailable');
       let out = null; const fin = v => { if(!out){ out = v; res(v); } };
       try{ Promise.resolve(fn({ ymid:this.mtId() })).then(() => fin('viewed'), () => fin('dismissed')); }catch(e){ fin('error'); }
-      setTimeout(() => fin('error'), 180000);
+      setTimeout(() => fin('error'), 45000);      // si en 45 s no responde, se libera la pantalla
     });
     return new Promise(res => {
       if(!this.showFn) return res('unavailable');
@@ -1623,11 +1621,12 @@ function showOver(){
   else { $('btnAd').disabled = false; $('adHint').textContent = `${s} → ${s * 2} puntos`; }
   showOnly('over');
 }
+let rewardState = 'loading';
 function setRewardBtn(state){
-  const s = G.pending;
+  const s = G.pending; rewardState = state;
   if(state === 'loading'){ $('btnAd').disabled = true; $('adHint').textContent = 'Cargando anuncio…'; }
   else if(state === 'ready'){ $('btnAd').disabled = s <= 0; $('adHint').textContent = `${s} → ${s * 2} puntos`; }
-  else { $('btnAd').disabled = true; $('adHint').textContent = 'Anuncio no disponible ahora. Puedes saltar y cobrar tus puntos normales.'; }
+  else { $('btnAd').disabled = false; $('adHint').textContent = 'Anuncio no disponible. Toca para reintentar, o salta y cobra tus puntos normales.'; }
 }
 let adBusy = false;
 function runAd(label, textFn, onDone){
@@ -1650,6 +1649,7 @@ async function creditCoins(n){
 }
 function playAd(){                                   // anuncio recompensado: duplica los puntos
   if(adBusy || claiming || G.pending <= 0) return;
+  if(Ads.enabled && rewardState !== 'ready'){ setRewardBtn('loading'); Ads.armReward(ok => setRewardBtn(ok ? 'ready' : 'none')); return; }   // reintento
   const reward = Math.min(G.pending, MAX_RUN_POINTS) * 2;
   const grant = async () => {
     G.pending = 0; G.rewarded = true; claiming = true;
